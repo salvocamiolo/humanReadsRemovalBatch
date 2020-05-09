@@ -17,14 +17,14 @@ else:
 	threads = args['threads']
 
 
-infile = open(infileName)
+i = open(infileName)
 os.system("mkdir -p "+outputFolder)
 outfile = open("./"+outputFolder+"/summuryStatistics.txt","w")
 while True:
-	read1 = infile.readline().rstrip()
+	read1 = i.readline().rstrip()
 	if not read1:
 		break
-	read2 = infile.readline().rstrip()
+	read2 = i.readline().rstrip()
 
 
 	if "fastq" in read1:
