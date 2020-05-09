@@ -6,9 +6,13 @@ parser = argparse.ArgumentParser(description="Remove human reads usin weeMapper"
 parser.add_argument("-i","--inputFile",required=True,help="Input file with list of paired end file name")
 parser.add_argument("-t","--threads",required=False,help="Number of threads to use")
 parser.add_argument("-o","--output_folder",required=True,help="Output folder")
+parser.add_argument("-c","--conda_directory",required=True,help="The conda environment path")
+parser.add_argument("-b","--bowtie2_index",required=True,help="The human bowtie2 index file ending with .1.bt2")
 
 args = vars(parser.parse_args())
 outputFolder = args['output_folder']
+condaDir = args['conda_directory']
+bowtie2Ref = args['humanIndex']
 
 infileName = args['inputFile']
 if not args['threads']:
@@ -35,22 +39,33 @@ while True:
 		prefix2 = ((read2.replace(".fq","")).split("/"))[-1]
 
 	print("Removing human reads from sample %s" %prefix1)
-	os.system("weeMapper -1 "+read1+" -2 "+read2+" -b ")
-	os.system("mv "+prefix1+"*_unmapped_1.fq ./"+outputFolder+"/"+prefix1+"_nh_1.fq")
-	os.system("mv "+prefix1+"*_unmapped_2.fq ./"+outputFolder+"/"+prefix1+"_nh_2.fq")
-	os.system("rm -f "+prefix1+"*_genome.bam")
-	os.system("tail -1 "+prefix1+"*_log >remainingReads")
-	infile = open("remainingReads")
-	numReads = infile.readline().strip()
-	infile.close()
-	os.system("cat ./"+outputFolder+"/"+prefix1+"_nh_1.fq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >baseCount")
-	os.system("cat ./"+outputFolder+"/"+prefix1+"_nh_2.fq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >>baseCount")
+	print("Aligning reads of sample %s to human reference...." %prefix1)
+	os.system(condaDir+"/bin/bowtie2 --local -x "+bowtie2Ref.replace(".1.bt2","")+" -1 "+read1+" -2 "+read2+" -p "+threads+" -S hostAlignment_140875.sam")
+	print("Converting sam to bam")
+	os.system(condaDir+"/bin/samtools view -bS -h hostAlignment_140875.sam >hostAlignment_140875.bam")
+	print("Extracting unaligned reads....")
+	os.system(condaDir+"/bin/bam2fastq --no-aligned --force --strict -o unmapped_140875#.fq hostAlignment_140875.bam")
+	print("Calculating number of filtered reads....")
+	os.system("wc -l tempReads_140875_1.fastq >numReads_140875")
+	numreads = open("numReads_140875")
+	numberOfReads = int(((numreads.readline().rstrip()).split(" "))[0])/2
+	numreads.close()
+	print("Calculating number of filtered bases....")
+	os.system("cat tempReads_140875_1.fastq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >baseCount")
+	os.system("cat tempReads_140875_2.fastq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >>baseCount")
 	infile = open("baseCount")
 	base1 = int(infile.readline().rstrip())
 	base2 = int(infile.readline().rstrip())
 	infile.close()
 
-	outfile.write(prefix1+"\t"+numReads+"\t"+str(base1+base2)+"\n")
+	os.system("mv unmapped_140875_1.fq ./"+outputFolder+"/"+prefix1+"_nh_1.fq")
+	os.system("mv unmapped_140875_2.fq ./"+outputFolder+"/"+prefix1+"_nh_2.fq")
+	os.system("rm -f hostAlignment_140875.*")
+	
+
+	
+
+	outfile.write(prefix1+"\t"+numberOfReads+"\t"+str(base1+base2)+"\n")
 
 	os.system("rm -f "+prefix1+"*_log")
 
