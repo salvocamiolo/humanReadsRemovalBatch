@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+import os,sys
+import argparse
+
+parser = argparse.ArgumentParser(description="Remove human reads usin weeMapper")
+parser.add_argument("-i","--inputFile",required=True,help="Input file with list of paired end file name")
+parser.add_argument("-t","--threads",required=False,help="Number of threads to use")
+parser.add_argument("-o","--output_folder",required=true,help="Output folder")
+
+args = vars(parser.parse_args())
+outputFolder = args['output_folder']
+
+infileName = args['inputFile']
+if not args['threads']:
+	threads = 1
+else:
+	threads = args['threads']
+
+
+infile = open(infileName)
+os.system("mkdir -p "+outputFolder)
+outfile = open("./"+outputFolder+"/summuryStatistics.txt","w")
+while True:
+	read1 = infile.readline().rstrip()
+	if not read1:
+		break
+	read2 = infile.readline().rstrip()
+
+
+	if "fastq" in read1:
+		prefix1 = ((read1.replace(".fastq","")).split("/"))[-1]
+		prefix2 = ((read2.replace(".fastq","")).split("/"))[-1]
+	if "fq" in read1:
+		prefix1 = ((read1.replace(".fq","")).split("/"))[-1]
+		prefix2 = ((read2.replace(".fq","")).split("/"))[-1]
+
+	print("Removing human reads from sample %s" %prefix1)
+	os.system("weeMapper -1 "+read1+" -2 "+read2+" -b ")
+	os.system("mv "+prefix1+"*_unmapped_1.fq ./"+outputFolder+"/"+prefix1+"_nh_1.fq")
+	os.system("mv "+prefix1+"*_unmapped_2.fq ./"+outputFolder+"/"+prefix1+"_nh_2.fq")
+	os.system("rm -f "+prefix1+"*_genome.bam")
+	os.system("tail -1 "+prefix1+"*_log >remainingReads")
+	infile = open("remainingReads")
+	numReads = infile.readline().strip()
+	infile.close()
+	os.system("cat "+read1+" | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >baseCount")
+	os.system("cat "+read1+" | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >>baseCount")
+	infile = open("baseCount")
+	base1 = int(infile.readline().rstrip())
+	base2 = int(infile.readline().rstrip())
+	infile.close()
+
+	outfile.write(prefix1+"\t"+numReads+"\t"+str(base1+base2)+"\n")
+
+	os.system("rm -f "+prefix1+"_log")
+
+outfile.close()
