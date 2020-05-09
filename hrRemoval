@@ -51,8 +51,8 @@ while True:
 	numberOfReads = int(((numreads.readline().rstrip()).split(" "))[0])/2
 	numreads.close()
 	print("Calculating number of filtered bases....")
-	os.system("cat unmapped_140875_1.fastq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >baseCount")
-	os.system("cat unmapped_140875_2.fastq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >>baseCount")
+	os.system("cat unmapped_140875_1.fq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >baseCount")
+	os.system("cat unmapped_140875_2.fq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c >>baseCount")
 	infile = open("baseCount")
 	base1 = int(infile.readline().rstrip())
 	base2 = int(infile.readline().rstrip())
