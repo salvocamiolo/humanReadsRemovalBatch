@@ -12,7 +12,7 @@ parser.add_argument("-b","--bowtie2_index",required=True,help="The human bowtie2
 args = vars(parser.parse_args())
 outputFolder = args['output_folder']
 condaDir = args['conda_directory']
-bowtie2Ref = args['humanIndex']
+bowtie2Ref = args['bowtie2_index']
 
 infileName = args['inputFile']
 if not args['threads']:
