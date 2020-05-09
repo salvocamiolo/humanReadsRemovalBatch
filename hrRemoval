@@ -65,7 +65,7 @@ while True:
 
 	
 
-	outfile.write(prefix1+"\t"+numberOfReads+"\t"+str(base1+base2)+"\n")
+	outfile.write(prefix1+"\t"+str(numberOfReads)+"\t"+str(base1+base2)+"\n")
 
 	os.system("rm -f "+prefix1+"*_log")
 
